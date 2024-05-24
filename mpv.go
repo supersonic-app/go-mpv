@@ -1,7 +1,11 @@
 package mpv
 
 /*
+#if defined(__has_include) && __has_include(<libmpv/client.h>)
+#include <libmpv/client.h>
+#else
 #include <mpv/client.h>
+#endif
 #include <stdlib.h>
 #cgo LDFLAGS: -lmpv
 
