@@ -16,6 +16,7 @@ void setStringArray(char** a, int i, char* s) {
 import "C"
 
 import (
+	"errors"
 	"unsafe"
 )
 
@@ -140,21 +141,12 @@ func (m *Mpv) GetProperty(name string, format Format) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
+		defer C.mpv_free_node_contents(&result)
 		return NewNode(&result), nil
 	case FORMAT_NODE_ARRAY:
-		var result C.mpv_node_list
-		err := NewError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
-		if err != nil {
-			return nil, err
-		}
-		return NewNodeList(&result), nil
+		fallthrough
 	case FORMAT_NODE_MAP:
-		var result C.mpv_node_list
-		err := NewError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
-		if err != nil {
-			return nil, err
-		}
-		return NewNodeMap(&result), nil
+		return nil, errors.New("unsupported format for mpv_get_property")
 	default:
 		return nil, ERROR_UNKNOWN_FORMAT
 
