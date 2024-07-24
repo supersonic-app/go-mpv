@@ -46,6 +46,12 @@ func Create() *Mpv {
 	return &Mpv{C.mpv_create()}
 }
 
+// MPVHandle returns the pointer to the mpv_handle struct
+// for invoking native MPV APIs
+func (m *Mpv) MPVHandle() unsafe.Pointer {
+	return unsafe.Pointer(m.handle)
+}
+
 // ClientName .
 func (m *Mpv) ClientName() string {
 	return C.GoString(C.mpv_client_name(m.handle))
@@ -58,7 +64,7 @@ func (m *Mpv) GetTimeUS() int64 {
 
 // Initialize runs mpv_initialize and returns any errors that might occur.
 func (m *Mpv) Initialize() error {
-	return NewError(C.mpv_initialize(m.handle))
+	return newError(C.mpv_initialize(m.handle))
 }
 
 // Command runs the specified command, returning an error if somethin goes wrong.
@@ -72,27 +78,27 @@ func (m *Mpv) Command(command []string) error {
 		C.setStringArray(arr, C.int(i), C.CString(s))
 	}
 
-	return NewError(C.mpv_command(m.handle, arr))
+	return newError(C.mpv_command(m.handle, arr))
 }
 
 // CommandString runs the given command string, this string is parsed internally by mpv.
 func (m *Mpv) CommandString(command string) error {
-	return NewError(C.mpv_command_string(m.handle, C.CString(command)))
+	return newError(C.mpv_command_string(m.handle, C.CString(command)))
 }
 
 // CommandNode runs the given command node.
 func (m *Mpv) CommandNode(args Node, result *Node) error {
-	return NewError(C.mpv_command_node(m.handle, args.CNode(), result.CNode()))
+	return newError(C.mpv_command_node(m.handle, args.CNode(), result.CNode()))
 }
 
 // LoadConfigFile loads the given config file.
 func (m *Mpv) LoadConfigFile(fn string) error {
-	return NewError(C.mpv_load_config_file(m.handle, C.CString(fn)))
+	return newError(C.mpv_load_config_file(m.handle, C.CString(fn)))
 }
 
 // SetProperty sets the client property according to the given format.
 func (m *Mpv) SetProperty(name string, format Format, data interface{}) error {
-	return NewError(C.mpv_set_property(m.handle, C.CString(name), C.mpv_format(format), convertData(format, data)))
+	return newError(C.mpv_set_property(m.handle, C.CString(name), C.mpv_format(format), convertData(format, data)))
 }
 
 // GetProperty returns the value of the property according to the given format.
@@ -101,14 +107,14 @@ func (m *Mpv) GetProperty(name string, format Format) (interface{}, error) {
 	defer C.free(unsafe.Pointer(n))
 	switch format {
 	case FORMAT_NONE:
-		err := NewError(C.mpv_get_property(m.handle, n, C.mpv_format(format), nil))
+		err := newError(C.mpv_get_property(m.handle, n, C.mpv_format(format), nil))
 		if err != nil {
 			return nil, err
 		}
 		return nil, nil
 	case FORMAT_STRING, FORMAT_OSD_STRING:
 		var result *C.char
-		err := NewError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
+		err := newError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
 		if err != nil {
 			return nil, err
 		}
@@ -116,28 +122,28 @@ func (m *Mpv) GetProperty(name string, format Format) (interface{}, error) {
 		return C.GoString(result), nil
 	case FORMAT_FLAG:
 		var result C.int
-		err := NewError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
+		err := newError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
 		if err != nil {
 			return nil, err
 		}
 		return result == 1, nil
 	case FORMAT_INT64:
 		var result C.int64_t
-		err := NewError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
+		err := newError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
 		if err != nil {
 			return nil, err
 		}
 		return int64(result), nil
 	case FORMAT_DOUBLE:
 		var result C.double
-		err := NewError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
+		err := newError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
 		if err != nil {
 			return nil, err
 		}
 		return float64(result), nil
 	case FORMAT_NODE:
 		var result C.mpv_node
-		err := NewError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
+		err := newError(C.mpv_get_property(m.handle, n, C.mpv_format(format), unsafe.Pointer(&result)))
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +161,7 @@ func (m *Mpv) GetProperty(name string, format Format) (interface{}, error) {
 
 // SetPropertyString sets the property to the given string.
 func (m *Mpv) SetPropertyString(name, value string) error {
-	return NewError(C.mpv_set_property_string(m.handle, C.CString(name), C.CString(value)))
+	return newError(C.mpv_set_property_string(m.handle, C.CString(name), C.CString(value)))
 }
 
 // GetPropertyString returns the value of the property as a string. If the property is empty,
@@ -184,22 +190,22 @@ func (m *Mpv) GetPropertyOsdString(name string) string {
 
 // ObserveProperty .
 func (m *Mpv) ObserveProperty(replyUserdata uint64, name string, format Format) error {
-	return NewError(C.mpv_observe_property(m.handle, C.uint64_t(replyUserdata), C.CString(name), C.mpv_format(format)))
+	return newError(C.mpv_observe_property(m.handle, C.uint64_t(replyUserdata), C.CString(name), C.mpv_format(format)))
 }
 
 // UnobserveProperty .
 func (m *Mpv) UnobserveProperty(replyUserdata uint64) error {
-	return NewError(C.mpv_unobserve_property(m.handle, C.uint64_t(replyUserdata)))
+	return newError(C.mpv_unobserve_property(m.handle, C.uint64_t(replyUserdata)))
 }
 
 // SetOption sets the given option according to the given format.
 func (m *Mpv) SetOption(name string, format Format, data interface{}) error {
-	return NewError(C.mpv_set_option(m.handle, C.CString(name), C.mpv_format(format), convertData(format, data)))
+	return newError(C.mpv_set_option(m.handle, C.CString(name), C.mpv_format(format), convertData(format, data)))
 }
 
 // SetOptionString sets the option to the given string.
 func (m *Mpv) SetOptionString(name, value string) error {
-	return NewError(C.mpv_set_option_string(m.handle, C.CString(name), C.CString(value)))
+	return newError(C.mpv_set_option_string(m.handle, C.CString(name), C.CString(value)))
 }
 
 // WaitEvent calls mpv_wait_event and returns the result as an Event struct.
@@ -212,7 +218,7 @@ func (m *Mpv) WaitEvent(timeout float32) *Event {
 		Event_Id:       EventId(event.event_id),
 		Data:           unsafe.Pointer(event.data),
 		Reply_Userdata: uint64(event.reply_userdata),
-		Error:          NewError(event.error),
+		Error:          newError(event.error),
 	}
 }
 
@@ -222,12 +228,12 @@ func (m *Mpv) RequestEvent(event EventId, enable bool) error {
 	if enable {
 		enable_ = 1
 	}
-	return NewError(C.mpv_request_event(m.handle, C.mpv_event_id(event), enable_))
+	return newError(C.mpv_request_event(m.handle, C.mpv_event_id(event), enable_))
 }
 
 // RequestLogMessages .
 func (m *Mpv) RequestLogMessages(level string) error {
-	return NewError(C.mpv_request_log_messages(m.handle, C.CString(level)))
+	return newError(C.mpv_request_log_messages(m.handle, C.CString(level)))
 }
 
 // Wakeup .
