@@ -14,12 +14,22 @@ import (
 
 // SetPropertyAsync .
 func (m *Mpv) SetPropertyAsync(name string, replyUserdata uint64, format Format, data interface{}) error {
-	return newError(C.mpv_set_property_async(m.handle, C.uint64_t(replyUserdata), C.CString(name), C.mpv_format(format), convertData(format, data)))
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	dataPtr, freeData := convertData(format, data)
+	if freeData != nil {
+		defer freeData()
+	}
+
+	return newError(C.mpv_set_property_async(m.handle, C.uint64_t(replyUserdata), cName, C.mpv_format(format), dataPtr))
 }
 
 // GetPropertyAsync .
 func (m *Mpv) GetPropertyAsync(name string, replyUserdata uint64, format Format) error {
-	return newError(C.mpv_get_property_async(m.handle, C.uint64_t(replyUserdata), C.CString(name), C.mpv_format(format)))
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+	return newError(C.mpv_get_property_async(m.handle, C.uint64_t(replyUserdata), cName, C.mpv_format(format)))
 }
 
 // CommandAsync .
@@ -29,9 +39,20 @@ func (m *Mpv) CommandAsync(replyUserdata uint64, command []string) error {
 		return ERROR_NOMEM
 	}
 	defer C.free(unsafe.Pointer(arr))
+
+	cStrings := make([]*C.char, len(command))
 	for i, s := range command {
-		C.setStringArray(arr, C.int(i), C.CString(s))
+		val := C.CString(s)
+		cStrings[i] = val
+		C.setStringArray(arr, C.int(i), val)
 	}
+
+	defer func() {
+		for _, cStr := range cStrings {
+			C.free(unsafe.Pointer(cStr))
+		}
+	}()
+
 	return newError(C.mpv_command_async(m.handle, C.uint64_t(replyUserdata), arr))
 }
 
