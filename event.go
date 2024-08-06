@@ -34,6 +34,7 @@ const (
 
 // String .
 func (e EventId) String() string {
+	// returns a static string that does not need to be freed
 	s := C.mpv_event_name(C.mpv_event_id(e))
 	if s == nil {
 		return ""
@@ -58,5 +59,6 @@ func (e *Event) Message() string {
 	if logMsgEvent == nil {
 		return ""
 	}
+	// TODO: does anything in the log message need freeing?
 	return C.GoString((*C.char)(logMsgEvent.text))
 }
