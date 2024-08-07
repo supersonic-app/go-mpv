@@ -1,6 +1,6 @@
 on: [push, pull_request]
 
-name: Build
+name: Build on Linux and Mac
 jobs:
   test:
     strategy:
@@ -9,6 +9,8 @@ jobs:
           - 1.22.x
         os:
           - ubuntu-latest
+          - macos-13
+          - macos-latest
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -20,13 +22,24 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Install package
+      - name: Install dependencies
         run: |
-          sudo apt-get update -y; sudo apt-get install -y libmpv-dev
-        if: runner.os == 'Linux'
+          if [[ $RUNNER_OS == 'Linux' ]]; then
+            sudo apt-get update
+            sudo apt-get install -y libmpv-dev
+          elif [[ $RUNNER_OS == 'macOS' ]]; then
+            brew install mpv
+            
+            # Export Homebrew's paths (macOS)
+            echo "C_INCLUDE_PATH=/usr/local/include:/opt/homebrew/include:$C_INCLUDE_PATH" >> $GITHUB_ENV
+            echo "LIBRARY_PATH=/usr/local/lib:/opt/homebrew/lib:$LIBRARY_PATH" >> $GITHUB_ENV
+            echo "CGO_CFLAGS=-I/usr/local/include -I/opt/homebrew/include" >> $GITHUB_ENV
+            echo "CGO_LDFLAGS=-L/usr/local/lib -L/opt/homebrew/lib" >> $GITHUB_ENV
+          fi
+          go mod download
 
       - name: Build
         run: go build ./...
 
-      - name: Build ./examples
+      - name: Build ./examples against latest published version
         run: go build -C examples

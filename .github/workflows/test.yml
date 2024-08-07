@@ -31,6 +31,12 @@ jobs:
             sudo apt-get install -y libmpv-dev
           elif [[ $RUNNER_OS == 'macOS' ]]; then
             brew install mpv
+            
+            # Export Homebrew's paths (macOS)
+            echo "C_INCLUDE_PATH=/usr/local/include:/opt/homebrew/include:$C_INCLUDE_PATH" >> $GITHUB_ENV
+            echo "LIBRARY_PATH=/usr/local/lib:/opt/homebrew/lib:$LIBRARY_PATH" >> $GITHUB_ENV
+            echo "CGO_CFLAGS=-I/usr/local/include -I/opt/homebrew/include" >> $GITHUB_ENV
+            echo "CGO_LDFLAGS=-L/usr/local/lib -L/opt/homebrew/lib" >> $GITHUB_ENV
           fi
           go mod download
 
