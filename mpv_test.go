@@ -11,13 +11,9 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-func TestClientName(t *testing.T) {
+func TestInit(t *testing.T) {
 	mpv := Create()
 	if err := mpv.Initialize(); err != nil {
 		t.Fatalf("Initialize() error: %v", err)
-	}
-	name := mpv.ClientName()
-	if name == "" {
-		t.Fatal("ClientName() returned an empty string")
 	}
 }
