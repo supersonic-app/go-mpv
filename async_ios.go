@@ -1,4 +1,4 @@
-//go:build ios && !iossimulator
+//go:build ios && !iossimulator && !mpvmediakit
 
 package mpv
 
