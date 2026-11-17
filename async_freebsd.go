@@ -4,6 +4,6 @@ package mpv
 
 /*
 #cgo CFLAGS: -I/usr/local/include
-#cgo LDFLAGS: -L/usr/local/lib -lmpv
+#cgo LDFLAGS: -L/usr/local/lib
 */
 import "C"
