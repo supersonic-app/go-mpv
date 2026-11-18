@@ -7,7 +7,6 @@ package mpv
 #include <mpv/client.h>
 #endif
 #include <stdlib.h>
-#cgo LDFLAGS: -lmpv
 
 char** makeCharArray(int size) {
     return calloc(sizeof(char*), size);
